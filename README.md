@@ -49,6 +49,10 @@ Puedes configurar el comportamiento usando variables de entorno:
 *   `GITGPT_RETRIES`: Número de reintentos si la salida de qwen es inválida o vacía (por defecto: 2).
 *   `GITGPT_MODEL`: Sugerencia opcional del modelo a incluir en el prompt.
 
+## Solución de Problemas
+
+Si encuentras errores como "nothing staged", asegúrate de tener cambios pendientes antes de ejecutar el script.
+
 ## Ejemplo
 
 ```bash
