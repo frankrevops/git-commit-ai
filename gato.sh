@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # gato.sh
-# Minimal commit-message generator using local qwen CLI.
+# Minimal commit-message generator using local gemini CLI.
 # Author: Frank I. (frankrevops)
 # Focus: precise subject + bullet body, low prose, dev-oriented output.
 
@@ -30,9 +30,10 @@ Usage:
   ./gato.sh -h|--help
 
 Env:
-  GITGPT_MAX_PATCH_LINES=2500   Max patch lines sent to qwen
-  GITGPT_RETRIES=2              Retries when qwen output is invalid/empty
+  GITGPT_MAX_PATCH_LINES=2500   Max patch lines sent to gemini
+  GITGPT_RETRIES=2              Retries when gemini output is invalid/empty
   GITGPT_MODEL=<name>           Optional model hint included in prompt
+  GEMINI_BIN=/path/to/gemini    Override gemini binary path
 EOF
 }
 
@@ -57,8 +58,19 @@ require_git() {
   command -v git >/dev/null 2>&1 || die "git is required"
 }
 
-require_qwen() {
-  command -v qwen >/dev/null 2>&1 || die "qwen CLI not found in PATH"
+require_gemini() {
+  GEMINI_BIN="${GEMINI_BIN:-gemini}"
+  if ! command -v "${GEMINI_BIN}" >/dev/null 2>&1; then
+    # Fallback to common paths on Mac/Linux if not in PATH
+    local candidates=("/opt/homebrew/bin/gemini" "/usr/local/bin/gemini" "/usr/bin/gemini")
+    for c in "${candidates[@]}"; do
+      if [[ -x "$c" ]]; then
+        GEMINI_BIN="$c"
+        return 0
+      fi
+    done
+    die "gemini CLI not found in PATH or common directories. Please install it or set GEMINI_BIN."
+  fi
 }
 
 require_repo() {
@@ -204,7 +216,7 @@ ${patch}
 EOF
 }
 
-generate_with_qwen() {
+generate_with_gemini() {
   local context="${1}"
   local attempt=0
   local raw msg
@@ -233,19 +245,19 @@ generate_with_qwen() {
     prompt+=$'\nCHANGE DATA:\n'
     prompt+="${context}"
 
-    local tmp_out tmp_err qwen_status
+    local tmp_out tmp_err gemini_status
     tmp_out="$(mktemp -t gitgpt.out.XXXXXX 2>/dev/null || mktemp)"
     tmp_err="$(mktemp -t gitgpt.err.XXXXXX 2>/dev/null || mktemp)"
-    qwen_status=0
-    if ! qwen "${prompt}" >"${tmp_out}" 2>"${tmp_err}"; then
-      qwen_status=$?
+    gemini_status=0
+    if ! "${GEMINI_BIN}" -p "${prompt}" >"${tmp_out}" 2>"${tmp_err}"; then
+      gemini_status=$?
     fi
     raw="$(cat "${tmp_out}" 2>/dev/null || true)"
     rm -f "${tmp_out}" "${tmp_err}"
 
-    # If qwen failed and produced no stdout, retry/fallback logic continues.
+    # If gemini failed and produced no stdout, retry/fallback logic continues.
     # We intentionally do not parse stderr as commit content.
-    if (( qwen_status != 0 )) && [[ -z "$(printf '%s' "${raw}" | sed '/^[[:space:]]*$/d')" ]]; then
+    if (( gemini_status != 0 )) && [[ -z "$(printf '%s' "${raw}" | sed '/^[[:space:]]*$/d')" ]]; then
       attempt=$((attempt + 1))
       continue
     fi
@@ -323,11 +335,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-require_qwen
+require_gemini
 
 if [[ "${MODE}" == "test" ]]; then
   CTX="$(build_test_context)"
-  MSG="$(generate_with_qwen "${CTX}")" || {
+  MSG="$(generate_with_gemini "${CTX}")" || {
     cat <<'EOF'
 simulate commit message generation
 
@@ -373,7 +385,7 @@ if [[ "${SHOW_ANALYSIS}" == "true" ]]; then
   exit 0
 fi
 
-MSG="$(generate_with_qwen "${CTX}")" || die "qwen failed to generate commit message"
+MSG="$(generate_with_gemini "${CTX}")" || die "gemini failed to generate commit message"
 
 echo
 echo "═══════════════════════════════════════════════════════"

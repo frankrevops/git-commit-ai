@@ -1,6 +1,6 @@
 # gato.sh
 
-**Generador minimalista de mensajes de commit usando Qwen CLI local.**
+**Generador minimalista de mensajes de commit usando Gemini CLI local.**
 
 Hecho por **Frank I. (frankrevops)**.
 
@@ -11,7 +11,7 @@ Este script está diseñado para desarrolladores que buscan mensajes de commit p
 Para utilizar `gato.sh`, necesitas tener instaladas las siguientes herramientas en tu sistema:
 
 1.  **git**: El sistema de control de versiones.
-2.  **qwen CLI**: La interfaz de línea de comandos para el modelo Qwen. Asegúrate de que el comando `qwen` esté disponible en tu `PATH`.
+2.  **gemini CLI**: La interfaz de línea de comandos para el modelo Gemini. Asegúrate de que el comando `gemini` esté disponible en tu `PATH` o configurado vía variable de entorno.
 
 ## Instalación
 
@@ -45,9 +45,10 @@ Ejecuta el script dentro de un repositorio git.
 
 Puedes configurar el comportamiento usando variables de entorno:
 
-*   `GITGPT_MAX_PATCH_LINES`: Número máximo de líneas del patch a enviar a qwen (por defecto: 2500).
-*   `GITGPT_RETRIES`: Número de reintentos si la salida de qwen es inválida o vacía (por defecto: 2).
+*   `GITGPT_MAX_PATCH_LINES`: Número máximo de líneas del patch a enviar a gemini (por defecto: 2500).
+*   `GITGPT_RETRIES`: Número de reintentos si la salida de gemini es inválida o vacía (por defecto: 2).
 *   `GITGPT_MODEL`: Sugerencia opcional del modelo a incluir en el prompt.
+*   `GEMINI_BIN`: Ruta personalizada al binario de `gemini` (ej. `/usr/local/bin/gemini`).
 
 ## Solución de Problemas
 
